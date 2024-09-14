@@ -4,9 +4,89 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>ElectroHogar</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .product { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    </style>
+
 </head>
 <body>
+    <div id="app">
+        <h1>{{title}}</h1>
+        <h2>Productos</h2>
+        <div v-for="producto in productos" :key="producto.id" class="product">
+            <h3>{{producto.nombre}}</h3>
+            <p>Precio: ${{producto.precio.toFixed(2)}}</p>
+            <button @click="agregarAlCarrrito(producto)">Agregar al carrito</button>
+
+        </div>
+        <h2>Carrito</h2>
+        <div v-if="carrito.lenght === 0"> El carrito esta vacio</div>
+        <div v-else>
+            <div v-for="item in carrito" :key="item.producto.id" class="cart-item">
+                <span>{{item.producto.nombre}} ({{item.cantidad}})</span>
+                <span>${{ (item.producto.precio * item.cantidad).toFixed(2) }}</span>
+                
+            </div>
+            <p><strong>Total: ${{totalCarrito.toFixed(2)}}</strong></p>
+        </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        new vue({
+            el: '#app',
+            data: {
+                title: 'ElectroHogar',
+                productos:[],
+                carrito: [],
+                usuarioId: 1
+            },
+            computed: {
+                totalCarrito(){
+                    return this.carrito.reduce((total,item) => total + item.producto.precio*item.cantidad, 0);
+                }
+            },
+            mounted() {
+                this.cargarProductos();
+                this.cargarCarrito();
+            },
+            methods: {
+                cargarProductos() {
+                    axios.get('/api/productos')
+                    .then(response =>{
+                        this.productos = response.data;
+                    })
+                    .catch(error =>{
+                        console.error('Error al cargar productos:', error);
+                    });
+                },
+                cargarCarrito() {
+                    axios.get(`/api/carrito/${this.usuarioId}`)
+                    .then(response =>{
+                        this.carrito = response.data;
+                    })
+                    .catch(error =>{
+                        console.error('Error al cargar carrito:', error);
+                    });
+                },
+                agregarAlCarrito(producto){
+                    axios.post(`/api/carrito/${this.usuarioId}`, {producto_id: producto.id, cantidad:1})
+                    .then(response =>{
+                        alert('Producto agregado al carrito');
+                        this.cargarCarrito();
+                    })
+                    .catch(error =>{
+                        console.error('Error al agregar al carrito:', error);
+                    });
+                }
+
+            }
+        });
+    </script>
     
 </body>
 </html>
